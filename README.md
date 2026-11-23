@@ -15,7 +15,7 @@
 |---|---|
 | 0. リポジトリ土台・セキュリティ設定 | ✅ |
 | 1. バックエンド（収集・認証・WebSocket） | ✅ |
-| 2. 画面の骨組み | ⏳ |
+| 2. 画面の骨組み（ログイン・ヘッダー・3カラム・ネオンテーマ） | ✅ |
 | 3. 各パネル | ⏳ |
 | 4. ネットワーク図アニメーション | ⏳ |
 
@@ -62,7 +62,15 @@ cd backend
 .\.venv\Scripts\python -m app
 ```
 
-`http://127.0.0.1:8787/` を開き、`.env` のトークンでログインします。（画面は段階2以降で追加されます。今は API のみ。）
+先に画面をビルドしておきます（Node.js 22 以上が必要。初回とフロントエンド更新時のみ）:
+
+```powershell
+cd frontend
+npm ci
+npm run build
+```
+
+そのあとバックエンドを起動し、`http://127.0.0.1:8787/` を開いて `.env` のトークンでログインします。
 
 ## セットアップ（Linux）
 
@@ -82,6 +90,15 @@ cd backend
 .venv/bin/python -m ruff check .
 .venv/bin/python -m bandit -q -c pyproject.toml -r app
 .venv/bin/python -m pip_audit --skip-editable
+```
+
+フロントエンドを開発モードで動かす場合（バックエンドを起動したまま別ターミナルで）:
+
+```bash
+cd frontend
+npm run dev      # http://127.0.0.1:5173/ （/api と /ws は 8787 へ中継）
+npm test         # vitest（XSS 対策の lint ルールのテストを含む）
+npm run lint
 ```
 
 コミット前に gitleaks を走らせるには `pre-commit install` を実行してください。
