@@ -17,13 +17,21 @@ from pathlib import Path
 PYTHON = "{python}"
 MAX_OUTPUT_BYTES = 5 * 1024 * 1024
 
-# Windows: Security ログの 4624(成功) / 4625(失敗) / 4740(ロックアウト) を新しい順に取得
-_WEVT_QUERY = "*[System[(EventID=4624 or EventID=4625 or EventID=4740)]]"
+# Windows: Security ログを直近24時間・新しい順に取得。
+# 失敗(4625)/ロックアウト(4740)と、人の操作による成功(4624: 対話型/ロック解除/RDP/キャッシュ)を分けて取る
+# （成功はサービスのログオンが大量にあり、まとめると失敗が埋もれるため）。
+_LAST_24H = "TimeCreated[timediff(@SystemTime) <= 86400000]"
+_WEVT_FAILURES = f"*[System[(EventID=4625 or EventID=4740) and {_LAST_24H}]]"
+_WEVT_SUCCESS = (
+    f"*[System[(EventID=4624) and {_LAST_24H}]] and *[EventData[Data[@Name='LogonType']='2' or "
+    "Data[@Name='LogonType']='7' or Data[@Name='LogonType']='10' or Data[@Name='LogonType']='11']]"
+)
 
 COMMANDS: dict[str, tuple[str, ...]] = {
-    "wevtutil_logons": ("wevtutil", "qe", "Security", f"/q:{_WEVT_QUERY}", "/f:xml", "/c:300", "/rd:true"),
+    "wevtutil_failures": ("wevtutil", "qe", "Security", f"/q:{_WEVT_FAILURES}", "/f:xml", "/c:500", "/rd:true"),
+    "wevtutil_success": ("wevtutil", "qe", "Security", f"/q:{_WEVT_SUCCESS}", "/f:xml", "/c:100", "/rd:true"),
     "journal_sshd": (
-        "journalctl", "--no-pager", "-o", "cat", "--since=-24h", "_COMM=sshd",
+        "journalctl", "--no-pager", "-o", "short-iso", "--since=-24h", "_COMM=sshd",
     ),
     "pip_audit_env": (PYTHON, "-m", "pip_audit", "-f", "json", "--progress-spinner", "off", "--skip-editable"),
     "pip_audit_requirements": (

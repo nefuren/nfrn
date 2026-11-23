@@ -27,11 +27,11 @@ def test_run_uses_list_and_no_shell(monkeypatch):
 
     monkeypatch.setattr(runner.shutil, "which", lambda exe: f"/usr/bin/{exe}")
     monkeypatch.setattr(runner.subprocess, "run", fake_run)
-    res = runner.run("wevtutil_logons")
+    res = runner.run("wevtutil_failures")
     assert res.returncode == 0 and res.stdout == "ok"
     assert isinstance(seen["args"], list)
     assert seen["args"][0] == "/usr/bin/wevtutil"
-    assert seen["args"][1:] == list(runner.COMMANDS["wevtutil_logons"][1:])
+    assert seen["args"][1:] == list(runner.COMMANDS["wevtutil_failures"][1:])
     assert seen["kwargs"].get("shell", False) is False
     assert "timeout" in seen["kwargs"]
 

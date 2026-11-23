@@ -10,6 +10,7 @@ dependencies = [
   "pydantic-settings>=2.7",
   "defusedxml>=0.7.1",
   "maxminddb>=2.6",
+  "pip-audit>=2.7",  # 依存脆弱性パネルで使う
 ]
 
 [project.optional-dependencies]
@@ -18,7 +19,6 @@ dev = [
   "httpx>=0.28",
   "ruff>=0.8",
   "bandit[toml]>=1.8",
-  "pip-audit>=2.7",
 ]
 
 [build-system]
