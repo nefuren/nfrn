@@ -1,7 +1,7 @@
 import pytest
-from starlette.websockets import WebSocketDisconnect
-
 from conftest import ORIGIN, WS_URL, login
+from starlette.testclient import WebSocketDenialResponse
+from starlette.websockets import WebSocketDisconnect
 
 
 def test_ws_rejects_without_session(client):
@@ -43,6 +43,6 @@ def test_ws_closes_after_logout(client):
 
 def test_ws_rejects_foreign_host(client):
     login(client)
-    with pytest.raises(Exception):
+    with pytest.raises(WebSocketDenialResponse):
         with client.websocket_connect("ws://evil.example:8787/ws", headers={"origin": ORIGIN}) as ws:
             ws.receive_json()

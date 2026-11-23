@@ -126,7 +126,9 @@ class AuditRunner:
         statuses = []
         for label, source, cmd, cwd in self._targets():
             if not cmd:
-                statuses.append({"name": label, "source": source, "state": "error", "message": "ディレクトリがありません"})
+                statuses.append(
+                    {"name": label, "source": source, "state": "error", "message": "ディレクトリがありません"}
+                )
                 continue
             state, message = "ok", ""
             try:

@@ -1,7 +1,7 @@
+from conftest import FakeMonitor
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from conftest import FakeMonitor
 
 
 def test_security_headers_on_every_response(client):

@@ -11,6 +11,9 @@ from pydantic import ValidationError
 from .config import MIN_TOKEN_LENGTH, Settings
 from .main import create_app
 
+# 比較用の定数（ここで bind するわけではない）
+WILDCARD_HOSTS = frozenset({"0.0.0.0", "::"})  # noqa: S104  # nosec B104
+
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -33,7 +36,7 @@ def main() -> int:
             " 意図した場合のみ使い、HTTPS（リバースプロキシ）と DESK_COOKIE_SECURE=true を併用してください。",
             settings.host,
         )
-    if settings.host not in settings.allowed_hosts and settings.host not in ("0.0.0.0", "::"):  # noqa: S104
+    if settings.host not in settings.allowed_hosts and settings.host not in WILDCARD_HOSTS:
         log.warning("DESK_HOST が DESK_ALLOWED_HOSTS に含まれていません。Host チェックで拒否されます。")
 
     print(f"IP TEST DESK: http://{settings.host}:{settings.port}/", flush=True)
