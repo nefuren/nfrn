@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# data
+*.mmdb
+*.mmdb.gz
+backend/data/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# node
+node_modules/
+frontend/dist/
+.vite/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
