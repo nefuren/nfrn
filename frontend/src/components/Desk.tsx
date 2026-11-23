@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDeskSocket } from "../hooks/useDeskSocket";
 import { appendSample, type Sample } from "../lib/series";
 import { AlertsPanel } from "../panels/AlertsPanel";
@@ -9,6 +9,7 @@ import { ScorePanel } from "../panels/ScorePanel";
 import { SystemPanel } from "../panels/SystemPanel";
 import { TrafficPanel } from "../panels/TrafficPanel";
 import { VulnPanel } from "../panels/VulnPanel";
+import { NetworkMap } from "../viz/NetworkMap";
 import { Header } from "./Header";
 import { Panel } from "./Panel";
 
@@ -27,8 +28,13 @@ export function Desk({ onUnauthorized, onLogout }: Props) {
   const score = tick?.score ?? slow?.score;
   const ports = slow?.ports ?? [];
   const exposed = ports.filter((p) => p.exposed).length;
-  const alerts = slow?.alerts ?? [];
+  const alerts = useMemo(() => slow?.alerts ?? [], [slow]);
   const crit = alerts.filter((a) => a.level === "crit").length;
+  const alertIps = useMemo(
+    () => [...new Set(alerts.map((a) => a.source_ip).filter((ip): ip is string => !!ip))],
+    [alerts],
+  );
+  const remotes = useMemo(() => tick?.remotes ?? [], [tick]);
   const vulnTotal = slow ? Object.values(slow.audit.counts).reduce((a, b) => a + (b ?? 0), 0) : 0;
 
   return (
@@ -58,7 +64,12 @@ export function Desk({ onUnauthorized, onLogout }: Props) {
             className="panel--map"
             aside={<span className="aside num">{tick?.remotes.length ?? 0} NODES</span>}
           >
-            <RemotesList remotes={tick?.remotes ?? []} />
+            <div className="map">
+              <NetworkMap remotes={remotes} alertIps={alertIps} hostname={slow?.host.hostname} />
+              <div className="map__list">
+                <RemotesList remotes={remotes} limit={30} />
+              </div>
+            </div>
           </Panel>
         </div>
 
