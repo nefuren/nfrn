@@ -1,7 +1,16 @@
+import { useEffect, useState } from "react";
 import { useDeskSocket } from "../hooks/useDeskSocket";
-import { formatBytesPerSec, formatPct } from "../lib/format";
+import { appendSample, type Sample } from "../lib/series";
+import { AlertsPanel } from "../panels/AlertsPanel";
+import { LoginPanel } from "../panels/LoginPanel";
+import { PortsPanel } from "../panels/PortsPanel";
+import { RemotesList } from "../panels/RemotesList";
+import { ScorePanel } from "../panels/ScorePanel";
+import { SystemPanel } from "../panels/SystemPanel";
+import { TrafficPanel } from "../panels/TrafficPanel";
+import { VulnPanel } from "../panels/VulnPanel";
 import { Header } from "./Header";
-import { Panel, Placeholder } from "./Panel";
+import { Panel } from "./Panel";
 
 interface Props {
   onUnauthorized: () => void;
@@ -10,61 +19,73 @@ interface Props {
 
 export function Desk({ onUnauthorized, onLogout }: Props) {
   const { status, tick, slow } = useDeskSocket({ onUnauthorized });
+  const [series, setSeries] = useState<Sample[]>([]);
+  useEffect(() => {
+    if (tick) setSeries((s) => appendSample(s, tick));
+  }, [tick]);
+
   const score = tick?.score ?? slow?.score;
-  const vulnTotal = slow ? Object.values(slow.audit.counts).reduce((a, b) => a + (b ?? 0), 0) : undefined;
+  const ports = slow?.ports ?? [];
+  const exposed = ports.filter((p) => p.exposed).length;
+  const alerts = slow?.alerts ?? [];
+  const crit = alerts.filter((a) => a.level === "crit").length;
+  const vulnTotal = slow ? Object.values(slow.audit.counts).reduce((a, b) => a + (b ?? 0), 0) : 0;
 
   return (
     <div className="desk">
-      <Header
-        hostname={slow?.host.hostname}
-        os={slow?.host.os}
-        status={status}
-        score={score?.value}
-        onLogout={onLogout}
-      />
+      <Header hostname={slow?.host.hostname} os={slow?.host.os} status={status} score={score?.value} onLogout={onLogout} />
       <main className="grid">
         <div className="col col--left">
           <Panel title="SECURITY SCORE" code="L-01" accent="lime">
-            <Placeholder value={score?.value ?? "—"} label="/ 100" note={`減点 ${score?.items.length ?? 0} 件`} />
+            <ScorePanel score={score} />
           </Panel>
           <Panel title="LOGIN FAILURES" code="L-02" accent="magenta">
-            <Placeholder value={slow?.logins.failures_1h ?? "—"} label="直近1時間" note={slow?.logins.status.source} />
+            <LoginPanel logins={slow?.logins} />
           </Panel>
           <Panel title="SYSTEM LOAD" code="L-03" accent="cyan">
-            <Placeholder
-              value={formatPct(tick?.system.cpu)}
-              label="CPU"
-              note={`MEM ${formatPct(tick?.system.mem)}`}
-            />
+            <SystemPanel tick={tick} series={series} />
           </Panel>
         </div>
 
         <div className="col col--center">
           <Panel title="TRAFFIC" code="C-01" accent="cyan">
-            <Placeholder
-              value={tick ? formatBytesPerSec(tick.net.rx_bps) : "—"}
-              label="受信"
-              note={`送信 ${tick ? formatBytesPerSec(tick.net.tx_bps) : "—"}`}
-            />
+            <TrafficPanel tick={tick} series={series} />
           </Panel>
-          <Panel title="NETWORK MAP" code="C-02" accent="magenta" className="panel--map">
-            <Placeholder value={tick?.remotes.length ?? "—"} label="通信先" note="段階4でアニメーション表示" />
+          <Panel
+            title="NETWORK MAP"
+            code="C-02"
+            accent="magenta"
+            className="panel--map"
+            aside={<span className="aside num">{tick?.remotes.length ?? 0} NODES</span>}
+          >
+            <RemotesList remotes={tick?.remotes ?? []} />
           </Panel>
         </div>
 
         <div className="col col--right">
-          <Panel title="OPEN PORTS" code="R-01" accent="orange">
-            <Placeholder
-              value={slow?.ports.length ?? "—"}
-              label="待ち受け"
-              note={`外部公開 ${slow?.ports.filter((p) => p.exposed).length ?? "—"}`}
-            />
+          <Panel
+            title="OPEN PORTS"
+            code="R-01"
+            accent="orange"
+            aside={<span className="aside num">{ports.length} / 公開 {exposed}</span>}
+          >
+            <PortsPanel ports={ports} firewall={slow?.firewall} />
           </Panel>
-          <Panel title="ALERTS" code="R-02" accent="magenta">
-            <Placeholder value={slow?.alerts.length ?? "—"} label="履歴" />
+          <Panel
+            title="ALERTS"
+            code="R-02"
+            accent="magenta"
+            aside={crit > 0 ? <span className="aside aside--crit num">CRIT {crit}</span> : undefined}
+          >
+            <AlertsPanel alerts={alerts} />
           </Panel>
-          <Panel title="VULNERABILITIES" code="R-03" accent="lime">
-            <Placeholder value={vulnTotal ?? "—"} label="件" note={slow?.audit.state} />
+          <Panel
+            title="VULNERABILITIES"
+            code="R-03"
+            accent="lime"
+            aside={<span className="aside num">{vulnTotal} 件</span>}
+          >
+            <VulnPanel audit={slow?.audit} />
           </Panel>
         </div>
       </main>

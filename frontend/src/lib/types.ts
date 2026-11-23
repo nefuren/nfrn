@@ -54,6 +54,7 @@ export interface ListeningPort {
   pid: number | null;
   process: string;
   exposed: boolean;
+  risky: string | null; // 危険なポートならサービス名（例: "RDP"）
 }
 
 export interface LoginEventView {

@@ -50,6 +50,7 @@ def test_monitor_produces_tick_and_slow(tmp_path):
     assert slow["logins"]["failures_1h"] == 3
     assert slow["logins"]["recent"][0]["user"] == "<b>x</b>"  # 生の文字列のまま
     assert len(slow["logins"]["failures_per_minute"]) == 60
+    assert all("risky" in p for p in slow["ports"])
     assert slow["score"] == tick["score"]  # tick は常に最新のスコアを載せる
     json.dumps(tick)
     json.dumps(slow, ensure_ascii=False)

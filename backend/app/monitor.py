@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from .analysis.alerts import AlertEngine
-from .analysis.score import ScoreContext, compute_score
+from .analysis.score import RISKY_PORTS, ScoreContext, compute_score
 from .collectors.audit import AuditRunner
 from .collectors.firewall import firewall_state
 from .collectors.geoip import GeoIP
@@ -127,7 +127,10 @@ class Monitor:
         events, status = await asyncio.to_thread(self.logins.fetch)
         new_events = self.history.add(events)
         self._login_status = status
-        self._ports = listening_ports(self._raw, self.names)
+        self._ports = [
+            {**p, "risky": RISKY_PORTS.get(p["port"]) if p["proto"] == "tcp" else None}
+            for p in listening_ports(self._raw, self.names)
+        ]
         self._firewall = await asyncio.to_thread(firewall_state)
         self.alerts.evaluate(now, new_events, self._ports, self._conns)
 

@@ -26,14 +26,3 @@ export function Panel({ title, code, accent = "cyan", className = "", aside, chi
     </section>
   );
 }
-
-/** 段階3でグラフに置き換える仮の中身 */
-export function Placeholder({ value, label, note }: { value: ReactNode; label: string; note?: string }) {
-  return (
-    <div className="placeholder">
-      <div className="placeholder__value num">{value}</div>
-      <div className="placeholder__label">{label}</div>
-      {note && <div className="placeholder__note">{note}</div>}
-    </div>
-  );
-}
