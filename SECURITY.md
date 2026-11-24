@@ -51,6 +51,7 @@ IP TEST DESK は「自分のマシンのセキュリティを監視するツー�
 - ループバック以外で待ち受けるには `DESK_ALLOW_REMOTE=true` と `DESK_COOKIE_SECURE=true` の両方が必須（どちらかが無ければ起動しない）
 - トークン認証（定数時間比較・試行回数制限）、セッションは HttpOnly / SameSite=Strict Cookie
 - WebSocket は Cookie と Origin の両方を確認
+- ログイン・ログアウト（`/api/login`・`/api/logout`）も Origin ヘッダーを必須にし、Origin が無い場合や許可リスト（`DESK_ALLOWED_ORIGINS`）に無い場合は `403` で拒否（CSRF 対策）
 - 外部由来の文字列はテキストとしてのみ表示（innerHTML 不使用）、Content Security Policy を設定
 - OS コマンドは固定の引数リストのみ、`shell=True` 不使用
 - 通信先IPを外部サービスへ送信しない（国判定はローカルDB）
