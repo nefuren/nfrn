@@ -71,8 +71,9 @@ def create_app(
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 
     def check_origin(request: Request) -> None:
+        # WebSocket と同じ厳しさ: Origin が無い場合も、許可リスト外の場合も拒否する（CSRF 対策の多層防御）
         origin = request.headers.get("origin")
-        if origin is not None and origin.rstrip("/") not in allowed_origins:
+        if origin is None or origin.rstrip("/") not in allowed_origins:
             raise HTTPException(status_code=403, detail="origin not allowed")
 
     def require_session(request: Request) -> str:

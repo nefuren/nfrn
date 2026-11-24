@@ -131,6 +131,11 @@ backend/app/
 | ファイアウォール | レジストリ（GPO 優先） | 未対応 |
 | 依存ライブラリの脆弱性 | pip-audit / npm audit | 同左 |
 
+### API を直接呼ぶ場合
+
+`/api/login` と `/api/logout` は、`Origin` ヘッダーが `DESK_ALLOWED_ORIGINS` に含まれていないと `403` を返します（`Origin` が無い場合も拒否）。
+ブラウザは自動で付けますが、curl などで呼ぶときは `-H "Origin: http://127.0.0.1:8787"` のように明示してください。WebSocket（`/ws`）も同じルールです。
+
 ### WebSocket メッセージ
 
 - `{"type":"tick", system, net, remotes, connections_total, score}` … 1秒ごと
