@@ -2,7 +2,7 @@
 
 自分の PC（Windows 11 / Linux）のセキュリティ状態をリアルタイムで監視する、ローカル専用の Web ダッシュボードです。
 
-- 既定で `127.0.0.1` だけで待ち受け、外部には公開しません
+- 既定で `127.0.0.1` だけで待ち受け、外部には公開しません（公開するには明示的な設定が必要。下の「外部に公開する場合」を参照）
 - トークン認証（HttpOnly Cookie）＋ WebSocket の Origin 確認 ＋ Host ヘッダ確認
 - 通信先 IP は外部サービスへ送りません（国判定はローカルの GeoIP DB）
 - 管理者権限なしで動きます
@@ -80,6 +80,17 @@ cp .env.example .env   # DESK_TOKEN を設定
 sudo usermod -aG adm "$USER"   # auth.log / journal を読むため（再ログインが必要）
 cd backend && .venv/bin/python -m app
 ```
+
+## 外部に公開する場合（非推奨）
+
+このダッシュボードは自分の PC から見ることを前提にしています。`DESK_HOST` をループバック（`127.0.0.0/8`・`::1`・`localhost`）以外にすると、**次の両方を設定しない限り起動しません**。
+
+| 設定 | 理由 |
+|---|---|
+| `DESK_ALLOW_REMOTE=true` | ネットワークに公開することを明示的に選ぶため。書き間違いで公開してしまう事故を防ぐ |
+| `DESK_COOKIE_SECURE=true` | セッション Cookie を HTTPS でしか送らせないため。平文の HTTP で盗聴されるのを防ぐ |
+
+`DESK_COOKIE_SECURE=true` の Cookie は HTTP では送られないので、外部公開するときは必ず HTTPS のリバースプロキシ（Caddy、nginx など）を前に置いてください。あわせて `DESK_ALLOWED_HOSTS` と `DESK_ALLOWED_ORIGINS` に、公開するホスト名と `https://` の Origin を追加し、ファイアウォールで接続元を絞ってください。
 
 ## ネットワーク図の見方
 
