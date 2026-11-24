@@ -140,3 +140,10 @@ backend/app/
 
 - **Settings → Code security** で Dependabot alerts / security updates、Private vulnerability reporting を有効化
 - CodeQL・gitleaks・CI は `.github/workflows/` に定義済み（gitleaks-action は Organization リポジトリでは `GITLEAKS_LICENSE` が必要）
+
+## ライセンス
+
+このリポジトリのコードは [MIT License](LICENSE) で公開しています。
+
+- 国判定に使う GeoIP データ（DB-IP Lite）はこのリポジトリに含まれておらず、別のライセンス（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)、IP Geolocation by [DB-IP](https://db-ip.com)）に従います。
+- 依存ライブラリはそれぞれのライセンスに従います。
