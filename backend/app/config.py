@@ -6,7 +6,7 @@ import ipaddress
 from pathlib import Path
 from typing import Annotated
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     token: SecretStr = Field(min_length=MIN_TOKEN_LENGTH)
     host: str = "127.0.0.1"
     port: int = Field(default=8787, ge=1, le=65535)
+    # ループバック以外で待ち受けるには、明示的に true にする必要がある（既定は外部非公開）
+    allow_remote: bool = False
     allowed_origins: Annotated[list[str], NoDecode] = [
         "http://127.0.0.1:8787",
         "http://localhost:8787",
@@ -70,6 +72,23 @@ class Settings(BaseSettings):
         if value is not None and not value.is_absolute():
             return BACKEND_DIR / value
         return value
+
+    @model_validator(mode="after")
+    def _remote_bind_must_be_explicit(self) -> Settings:
+        if self.is_loopback():
+            return self
+        if not self.allow_remote:
+            raise ValueError(
+                f"DESK_HOST={self.host} はループバック以外のため、ダッシュボードがネットワークに公開されます。"
+                "本当に公開する場合だけ DESK_ALLOW_REMOTE=true を設定してください"
+                "（通常は DESK_HOST=127.0.0.1 のまま使ってください）。"
+            )
+        if not self.cookie_secure:
+            raise ValueError(
+                "外部に公開する場合は HTTPS（リバースプロキシ）を使い、DESK_COOKIE_SECURE=true を設定してください。"
+                "セッション Cookie が平文の HTTP で盗まれるのを防ぐためです。"
+            )
+        return self
 
     def is_loopback(self) -> bool:
         if self.host == "localhost":

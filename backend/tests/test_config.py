@@ -44,7 +44,9 @@ def test_empty_geoip_means_none(monkeypatch):
 
 
 def test_non_loopback_detected():
-    assert not Settings(token=GOOD, host="0.0.0.0", _env_file=None).is_loopback()
+    assert not Settings(
+        token=GOOD, host="0.0.0.0", allow_remote=True, cookie_secure=True, _env_file=None
+    ).is_loopback()
     assert Settings(token=GOOD, host="::1", _env_file=None).is_loopback()
     assert Settings(token=GOOD, host="localhost", _env_file=None).is_loopback()
 
@@ -53,3 +55,43 @@ def test_audit_paths_parsed(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("DESK_TOKEN", GOOD)
     monkeypatch.setenv("DESK_AUDIT_PATHS", f"{tmp_path},{tmp_path}")
     assert Settings(_env_file=None).audit_paths == [tmp_path, tmp_path]
+
+
+# ---------- 外部公開には明示的な許可が必要（Issue #12） ----------
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "127.0.0.2", "::1", "localhost"])
+def test_loopback_starts_without_extra_flags(host):
+    s = Settings(token=GOOD, host=host, _env_file=None)
+    assert s.is_loopback() and s.allow_remote is False
+
+
+@pytest.mark.parametrize("host", ["0.0.0.0", "::", "192.0.2.10", "desk.example"])
+def test_remote_bind_requires_allow_remote(host):
+    with pytest.raises(ValidationError) as exc:
+        Settings(token=GOOD, host=host, cookie_secure=True, _env_file=None)
+    assert "DESK_ALLOW_REMOTE=true" in str(exc.value)
+
+
+def test_remote_bind_requires_secure_cookie():
+    with pytest.raises(ValidationError) as exc:
+        Settings(token=GOOD, host="0.0.0.0", allow_remote=True, _env_file=None)
+    assert "DESK_COOKIE_SECURE=true" in str(exc.value)
+
+
+def test_remote_bind_allowed_with_both_flags():
+    s = Settings(token=GOOD, host="0.0.0.0", allow_remote=True, cookie_secure=True, _env_file=None)
+    assert not s.is_loopback()
+
+
+def test_remote_flags_from_env(monkeypatch):
+    monkeypatch.setenv("DESK_TOKEN", GOOD)
+    monkeypatch.setenv("DESK_HOST", "0.0.0.0")
+    monkeypatch.setenv("DESK_ALLOW_REMOTE", "true")
+    monkeypatch.setenv("DESK_COOKIE_SECURE", "true")
+    s = Settings(_env_file=None)
+    assert s.allow_remote and s.cookie_secure
+
+
+def test_allow_remote_alone_does_not_matter_on_loopback():
+    # ループバックなら DESK_ALLOW_REMOTE の有無にかかわらず起動できる
+    assert Settings(token=GOOD, host="127.0.0.1", allow_remote=True, _env_file=None).is_loopback()

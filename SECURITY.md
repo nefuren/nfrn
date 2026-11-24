@@ -41,13 +41,14 @@ IP TEST DESK は「自分のマシンのセキュリティを監視するツー�
 - 秘密情報（トークンなど）の漏えい
 
 対象外:
-- 利用者が自分で `DESK_HOST=0.0.0.0` にして外部公開した場合の、ネットワーク上の盗聴（HTTPS 化はリバースプロキシで行ってください）
+- 利用者が `DESK_ALLOW_REMOTE=true` と `DESK_COOKIE_SECURE=true` を設定して意図的に外部公開した構成で、HTTPS のリバースプロキシやファイアウォールの設定に起因する問題（ただし、これらの設定なしで外部公開できてしまう不具合は対象です）
 - 管理者権限を持つ攻撃者がすでにマシンを掌握している状況
 - 監視対象のOSや他のソフトウェア自体の脆弱性
 
 ## 設計上の安全策（概要）
 
 - 既定で `127.0.0.1` のみで待ち受け、Host ヘッダも許可リストで確認
+- ループバック以外で待ち受けるには `DESK_ALLOW_REMOTE=true` と `DESK_COOKIE_SECURE=true` の両方が必須（どちらかが無ければ起動しない）
 - トークン認証（定数時間比較・試行回数制限）、セッションは HttpOnly / SameSite=Strict Cookie
 - WebSocket は Cookie と Origin の両方を確認
 - 外部由来の文字列はテキストとしてのみ表示（innerHTML 不使用）、Content Security Policy を設定
