@@ -71,3 +71,34 @@ def test_rate_limiter_window():
     assert not rl.allow("k")
     now[0] += 11
     assert rl.allow("k")
+
+
+# ---------- Origin ヘッダーの検査（Issue #8） ----------
+
+def test_login_rejects_missing_origin(client):
+    r = client.post("/api/login", json={"token": TOKEN})  # Origin なし
+    assert r.status_code == 403
+    assert "set-cookie" not in r.headers
+    assert client.get("/api/session").json() == {"authenticated": False}
+
+
+def test_login_allows_configured_origin(client):
+    assert client.post("/api/login", json={"token": TOKEN}, headers={"origin": ORIGIN}).status_code == 204
+
+
+def test_logout_rejects_missing_origin(client):
+    login(client)
+    assert client.post("/api/logout").status_code == 403  # Origin なし
+    assert client.get("/api/session").json() == {"authenticated": True}  # セッションは残る
+
+
+def test_logout_rejects_foreign_origin(client):
+    login(client)
+    assert client.post("/api/logout", headers={"origin": "http://evil.example"}).status_code == 403
+    assert client.get("/api/session").json() == {"authenticated": True}
+
+
+def test_origin_rejection_does_not_consume_rate_limit(client):
+    for _ in range(10):
+        assert client.post("/api/login", json={"token": "bad"}).status_code == 403
+    assert login(client).status_code == 204
