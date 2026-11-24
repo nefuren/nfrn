@@ -9,6 +9,11 @@ description = "IP TEST DESK access token"
 regex = '''DESK_TOKEN\s*=\s*['"]?[A-Za-z0-9_\-]{16,}'''
 keywords = ["DESK_TOKEN"]
 
+# 例外は「明らかに偽物と分かる値」だけに限定する。
+# - ディレクトリ（paths）やコミット単位の除外は使わない。テストやフィクスチャに
+#   本物の秘密情報が紛れ込んでも検出できるようにするため。
+# - テストで秘密情報らしい文字列が必要なときは、必ず `fake-desk-token-` で始めること。
+# - この設定は backend/tests/test_gitleaks_config.py で検査している。
 [allowlist]
-description = "test fixtures use obviously fake tokens"
-paths = ['''backend/tests/.*''']
+description = "Explicitly fake values used in tests (prefix: fake-desk-token-)"
+regexes = ['''fake-desk-token-[A-Za-z0-9_\-]+''']
