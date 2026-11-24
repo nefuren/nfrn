@@ -3,6 +3,11 @@
 .env.*
 !.env.example
 
+# logs（実際のログにはユーザー名・IP・ホスト名が含まれ得るので、コミットしない）
+*.log
+# 例外: テスト用のフィクスチャだけは追跡する。中身は架空の値と、文書用（192.0.2.0/24 など）かプライベートの IP のみにすること
+!backend/tests/fixtures/*.log
+
 # data
 *.mmdb
 *.mmdb.gz
